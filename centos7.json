@@ -60,17 +60,27 @@
       "destination": "/root/authorized_keys"
     },
     {
-      "type": "file",
-      "source": "scripts/network.sh",
-      "destination": "/root/network.sh"
+      "type": "shell",
+      "remote_folder": "/root",
+      "inline": [
+        "mkdir /root/.ssh",
+        "mv /root/authorized_keys /root/.ssh/",
+        "restorecon -R -v /root/.ssh"
+      ]
     },
     {
       "type": "shell",
       "remote_folder": "/root",
       "inline": [
-        "git clone ",
-        "mv /root/authorized_keys /root/.ssh/",
-        "restorecon -R -v /root/.ssh"
+        "git clone git@github.com:buuren/centos7-template.git"
+      ]
+    },
+    {
+      "type": "shell",
+      "remote_folder": "/root/centos7-template",
+      "inline": [
+        "yum install ansible",
+        "ansible-playbook ansible/playbook.yml"
       ]
     }
   ]
