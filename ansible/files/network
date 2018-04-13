@@ -1,0 +1,3 @@
+PERSISTENT_DHCLIENT=yes
+NOZEROCONF=yes
+HOSTNAME=localhost.localdomain

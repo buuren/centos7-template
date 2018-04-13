@@ -1,0 +1,83 @@
+{
+  "variables": {
+    "name": "centos7",
+    "base_name": "centos7-x86_64",
+    "iso_name": "CentOS-7-x86_64-Minimal-1708.iso",
+    "iso_url": "http://ftp.estpak.ee/pub/centos/7.4.1708/isos/x86_64/CentOS-7-x86_64-Minimal-1708.iso",
+    "iso_checksum": "bba314624956961a2ea31dd460cd860a77911c1e0a56e4820a12b9c5dad363f5",
+    "iso_checksum_type": "sha256",
+    "iso_path": "packer/iso/",
+    "output_directory": "artifacts",
+    "ssh_username": "root",
+    "ssh_password": "rootroot",
+    "disk_size": "11000"
+  },
+
+  "builders":
+  [
+    {
+      "name": "{{ user `base_name` }}",
+      "type": "qemu",
+      "accelerator": "kvm",
+      "qemu_binary": "/usr/libexec/qemu-kvm",
+      "headless": true,
+      "use_default_display": true,
+      "qemuargs": [
+        ["-m", "1024"],
+        [ "-smp", "cpus=1,maxcpus=16,cores=1" ],
+        ["-serial", "mon:stdio"]
+      ],
+      "disk_interface": "virtio",
+      "disk_size": "{{ user `disk_size` }}",
+
+      "net_device": "virtio-net",
+      "disk_cache": "none",
+
+      "iso_urls": [
+        "{{ user `iso_path` }}/{{ user `iso_name` }}",
+        "{{ user `iso_url` }}"
+      ],
+      "iso_checksum": "{{ user `iso_checksum` }}",
+      "iso_checksum_type": "{{ user `iso_checksum_type` }}",
+      "vm_name": "{{user `base_name`}}.raw",
+      "http_directory": "packer/http",
+      "ssh_username": "{{ user `ssh_username` }}",
+      "ssh_password": "{{ user `ssh_password` }}",
+      "ssh_wait_timeout": "1200s",
+      "boot_command": [
+        "<tab> net.ifnames=0 biosdevname=0 text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/centos7-kickstart.cfg<enter><wait>"
+      ],
+      "shutdown_command": "shutdown -P now",
+      "output_directory": "{{ user `output_directory` }}",
+      "format": "raw"
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "{{user `public_key_path`}}",
+      "destination": "/root/authorized_keys"
+    },
+    {
+      "type": "file",
+      "source": "scripts/network.sh",
+      "destination": "/root/network.sh"
+    },
+    {
+      "type": "shell",
+      "remote_folder": "/root",
+      "inline": [
+        "git clone ",
+        "mv /root/authorized_keys /root/.ssh/",
+        "restorecon -R -v /root/.ssh"
+      ]
+    }
+  ]
+}
+
+
+
+
+
+

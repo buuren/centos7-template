@@ -1,0 +1,3 @@
+artifacts/*.raw
+packer/iso/*.iso
+packer_cache

@@ -1,0 +1,111 @@
+---
+- hosts: '{{ host }}'
+  gather_facts: no
+
+  tasks:
+    - name: Update packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Install extra packages
+      yum:
+        state: installed
+        name:
+          - yum-utils
+          - acpid
+          - gem
+          - cloud-init
+          - cloud-utils
+          - cloud-utils-growpart
+          - ruby
+          - https://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.noarch.rpm
+
+    - name: Delete packages
+      yum:
+        state: removed
+        name:
+          - iwl5000-firmware
+          - ivtv-firmware
+          - xorg-x11-drv-ati-firmware
+          - iwl4965-firmware
+          - iwl3945-firmware
+          - iwl5150-firmware
+          - iwl6050-firmware
+          - iwl6000g2a-firmware
+          - iwl6000-firmware
+          - iwl100-firmware
+          - aic94xx-firmware
+          - iwl1000-firmware
+          - alsa-tools-firmware
+          - iwl3160-firmware
+          - iwl6000g2b-firmware
+          - iwl2030-firmware
+          - iwl2000-firmware
+          - linux-firmware
+          - alsa-firmware
+          - iwl7265-firmware
+          - iwl105-firmware
+          - iwl135-firmware
+          - iwl7260-firmware
+
+    - name: Enable services
+      systemd:
+        state: started
+        enabled: yes
+        name: "{{ item }}"
+      with_items:
+        - NetworkManager
+        - sshd
+        - acpid
+        - cloud-config.service
+        - cloud-final.service
+        - cloud-init-local.service
+        - cloud-init.service
+
+    - name: Disable services
+      systemd:
+        state: stopped
+        enabled: no
+        name: "{{ item }}"
+      with_items:
+        - firewalld
+        - chronyd
+        - kdump.service
+        - rsyslog
+        - crond
+
+    - name: Copy growpart
+      copy:
+        src: files/10-growpart.cfg
+        dest: /etc/cloud/cloud.cfg.d/10-growpart.cfg
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Copy network
+      copy:
+        src: files/network
+        dest: /etc/sysconfig/network
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Cleanup
+      shell: |
+        /bin/rm -f /etc/ssh/*_key /etc/ssh/*_key.pub
+        /bin/find /usr/share/{man,doc,info} -type f -delete
+        /bin/find /usr/share/{backgrounds,kde4,wallpapers} -type f -regextype posix-extended -regex '.*\.(jpg|png)$' -delete
+        /bin/find /var/log/ -type f | while read file; do cat /dev/null > "${file}";done
+        /bin/find /tmp -type f -delete
+        /bin/find /home/ -mindepth 1 -maxdepth 1 -type d -exec /bin/rm -fr {} \;
+        /bin/rm -rf /etc/udev/rules.d/70-*
+        /bin/sed -i -e 's~^DHCP_HOSTNAME=.*$~DHCP_HOSTNAME=\"localhost.localdomain\"~' /etc/sysconfig/network-scripts/ifcfg-eth*
+        /bin/sed -i -e '/^HWADDR=/d' /etc/sysconfig/network-scripts/ifcfg-eth*
+        /bin/sed -i -e '/^UUID=/d' /etc/sysconfig/network-scripts/ifcfg-eth*
+        /bin/echo > /etc/machine-id
+        /usr/bin/yum -y clean all
+        /bin/rm -rf /var/cache/yum
+        dd if=/dev/zero of=/zeros bs=1M || rm -f /zeros
+        rm -rf /zeros
+        history -c
