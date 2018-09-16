@@ -1,0 +1,24 @@
+---
+- hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Cleanup
+      shell: |
+        package-cleanup -q --leaves | xargs -l1 yum -y remove
+        /bin/rm -f /etc/ssh/*_key /etc/ssh/*_key.pub
+        /bin/find /usr/share/{man,doc,info} -type f -delete
+        /bin/find /usr/share/{backgrounds,kde4,wallpapers} -type f -regextype posix-extended -regex '.*\.(jpg|png)$' -delete
+        /bin/find /var/log/ -type f | while read file; do cat /dev/null > "${file}";done
+        /bin/find /tmp -type f -delete
+        /bin/find /home/ -mindepth 1 -maxdepth 1 -type d -exec /bin/rm -fr {} \;
+        /bin/rm -rf /etc/udev/rules.d/70-*
+        /bin/sed -i -e 's~^DHCP_HOSTNAME=.*$~DHCP_HOSTNAME=\"localhost.localdomain\"~' /etc/sysconfig/network-scripts/ifcfg-eth*
+        /bin/sed -i -e '/^HWADDR=/d' /etc/sysconfig/network-scripts/ifcfg-eth*
+        /bin/sed -i -e '/^UUID=/d' /etc/sysconfig/network-scripts/ifcfg-eth*
+        /bin/echo > /etc/machine-id
+        /usr/bin/yum -y clean all
+        /bin/rm -rf /var/cache/yum
+        dd if=/dev/zero of=/zeros bs=1M || rm -f /zeros
+        rm -rf /zeros
+        history -c

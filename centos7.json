@@ -60,6 +60,11 @@
       "destination": "/root/authorized_keys"
     },
     {
+      "type": "file",
+      "source": "ansible",
+      "destination": "/root/ansible"
+    },
+    {
       "type": "shell",
       "remote_folder": "/root",
       "inline": [
@@ -70,24 +75,21 @@
     },
     {
       "type": "shell",
-      "remote_folder": "/root",
+      "remote_folder": "/root/ansible",
       "inline": [
-        "git clone git@github.com:buuren/centos7-template.git"
+        "yum install ansible -y",
+        "cd /root/ansible; ansible-playbook prepare.yml; ansible-playbook cleanup.yml"
       ]
-    },
+    }
+    ,
     {
       "type": "shell",
-      "remote_folder": "/root/centos7-template",
+      "remote_folder": "/root",
       "inline": [
-        "yum install ansible",
-        "ansible-playbook ansible/playbook.yml"
+        "yum history undo 2 -y",
+        "yum clean all",
+        "rm -rf /root/ansible /var/cache/yum"
       ]
     }
   ]
 }
-
-
-
-
-
-

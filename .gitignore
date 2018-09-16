@@ -1,3 +1,5 @@
-artifacts/*.raw
+artifacts/*
 packer/iso/*.iso
 packer_cache
+*.box
+vagrant/env/.vagrant

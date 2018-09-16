@@ -3,7 +3,16 @@
   gather_facts: no
 
   tasks:
-    - name: Update packages
+    - name: Add docker repository
+      yum_repository:
+        name: docker-ce
+        description: Docker CE repository
+        baseurl: https://download-stage.docker.com/linux/centos/7/$basearch/stable
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://download-stage.docker.com/linux/centos/gpg
+
+    - name: Update existing packages
       yum:
         name: '*'
         state: latest
@@ -20,6 +29,9 @@
           - cloud-utils-growpart
           - ruby
           - https://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.noarch.rpm
+          - device-mapper-persistent-data
+          - lvm2
+          - docker-ce-18.03.0.ce
 
     - name: Delete packages
       yum:
@@ -90,22 +102,3 @@
         owner: root
         group: root
         mode: 0644
-
-    - name: Cleanup
-      shell: |
-        /bin/rm -f /etc/ssh/*_key /etc/ssh/*_key.pub
-        /bin/find /usr/share/{man,doc,info} -type f -delete
-        /bin/find /usr/share/{backgrounds,kde4,wallpapers} -type f -regextype posix-extended -regex '.*\.(jpg|png)$' -delete
-        /bin/find /var/log/ -type f | while read file; do cat /dev/null > "${file}";done
-        /bin/find /tmp -type f -delete
-        /bin/find /home/ -mindepth 1 -maxdepth 1 -type d -exec /bin/rm -fr {} \;
-        /bin/rm -rf /etc/udev/rules.d/70-*
-        /bin/sed -i -e 's~^DHCP_HOSTNAME=.*$~DHCP_HOSTNAME=\"localhost.localdomain\"~' /etc/sysconfig/network-scripts/ifcfg-eth*
-        /bin/sed -i -e '/^HWADDR=/d' /etc/sysconfig/network-scripts/ifcfg-eth*
-        /bin/sed -i -e '/^UUID=/d' /etc/sysconfig/network-scripts/ifcfg-eth*
-        /bin/echo > /etc/machine-id
-        /usr/bin/yum -y clean all
-        /bin/rm -rf /var/cache/yum
-        dd if=/dev/zero of=/zeros bs=1M || rm -f /zeros
-        rm -rf /zeros
-        history -c
